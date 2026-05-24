@@ -9,7 +9,8 @@ echo "procs real user sys" > $OUTPUT
 for np in "${PROCS[@]}"; do
     echo "Ejecutando con $np procesos..."
 
-    result=$(mpiexec -n $np -f /data/user1/mymachinefile ./rng $N)
+    #result=$(mpiexec -n $np -f /data/user1/mymachinefile ./rng $N)
+    result=$(mpiexec -n $np -f /data/user1/mymachinefile -env FI_PROVIDER tcp ./rng_mpi $N)
     
     real=$(echo "$result" | grep "^real" | awk '{print $2}')
     user=$(echo "$result" | grep "^user" | awk '{print $2}')
