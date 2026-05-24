@@ -1,7 +1,7 @@
 #!/bin/bash
 
 N=1000
-PROCS=(1 2 4 8 16)
+PROCS=(1 2 3 4 5 6 7 8)
 OUTPUT="tiempos.txt"
 
 echo "procs real user sys" > $OUTPUT
