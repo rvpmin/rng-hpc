@@ -1,6 +1,6 @@
 #!/bin/bash
 
-N=1000
+N=${1:-300} 
 PROCS=(2 3 4 5 6 7 8)
 OUTPUT="tiempos.txt"
 
