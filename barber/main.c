@@ -65,7 +65,6 @@ int main(int argn, char **argc) {
     MPI_Comm_size(MPI_COMM_WORLD, &numproc);
     MPI_Barrier(MPI_COMM_WORLD);
 
-
     int N = 20;
     if (miproc == 0) {
         if (argn >= 2) N = atoi(argc[1]);
@@ -74,11 +73,9 @@ int main(int argn, char **argc) {
     }
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    //Keep the same points throughout all processes
     Point *points = (Point *)malloc(N * sizeof(Point));
     generate_points(points, N);
 
-    //Precalculate distances
     double *dist = (double *)calloc(N * N, sizeof(double));
     for (int i = 0; i < N; i++)
         for (int j = i + 1; j < N; j++) {
@@ -89,7 +86,7 @@ int main(int argn, char **argc) {
 
     long total_pairs = (long)N * (N - 1) / 2;
 
-    //Slaves
+    // Slaves
     if (miproc != 0) {
 
         MPI_myvar *msg = alloc_msg(N);
@@ -98,25 +95,21 @@ int main(int argn, char **argc) {
         msg->j        = -1;
         msg->is_edge  = 0;
 
-        //Copy points to message
         for (int k = 0; k < N; k++) {
             msg->points[k].phi   = points[k].phi;
             msg->points[k].theta = points[k].theta;
         }
 
         while (1) {
-            //Send result to master
             MPI_Send(msg, msg_size(N), MPI_CHARACTER,
                      0, 0, MPI_COMM_WORLD);
 
-            //Receive next pair to evaluate
             MPI_Recv(msg, msg_size(N), MPI_CHARACTER,
                      0, 0, MPI_COMM_WORLD, &status);
 
             int i = msg->i;
             int j = msg->j;
 
-            //Stop signal: i = j = -2
             if (i == -2) break;
 
             double d_ij  = dist[i * N + j];
@@ -134,20 +127,16 @@ int main(int argn, char **argc) {
 
         free(msg);
 
-    //Master
+    // Master
     } else {
 
-        //Matrixes
         int *edges_global = (int *)calloc(N * N, sizeof(int));
         int  num_edges    = 0;
 
         MPI_myvar *msg = alloc_msg(N);
         int flag = -1;
-
-
         long next_pair = 0;
 
-        
         #define PAIR_TO_IJ(p, N, pi, pj) do {                        \
             double _d = (2.0*(N)-1.0);                                \
             int _i = (int)((_d - sqrt(_d*_d - 8.0*(p))) / 2.0);      \
@@ -157,13 +146,10 @@ int main(int argn, char **argc) {
             *(pi) = _i;  *(pj) = (int)((p)-_base)+_i+1;              \
         } while(0)
 
-        
         long msgs_to_recv = (numproc - 1) + total_pairs;
         long msgs_recvd   = 0;
 
         while (1) {
-
-            
             if (flag != 0) {
                 MPI_Irecv(msg, msg_size(N), MPI_CHARACTER,
                           MPI_ANY_SOURCE, MPI_ANY_TAG,
@@ -176,7 +162,6 @@ int main(int argn, char **argc) {
             if (flag != 0) {
                 int src = status.MPI_SOURCE;
 
-        
                 int ri = msg->i, rj = msg->j;
                 if (ri >= 0 && rj >= 0 && msg->is_edge) {
                     edges_global[ri * N + rj] = 1;
@@ -184,7 +169,6 @@ int main(int argn, char **argc) {
                     num_edges++;
                 }
                 msgs_recvd++;
-
 
                 if (next_pair < total_pairs) {
                     int ni, nj;
@@ -194,34 +178,60 @@ int main(int argn, char **argc) {
                     msg->is_edge = 0;
                     next_pair++;
                 } else {
-
                     msg->i = -2;
                     msg->j = -2;
                 }
 
                 MPI_Send(msg, msg_size(N), MPI_CHARACTER,
                          src, 0, MPI_COMM_WORLD);
-
                 flag = -1;
             }
 
-
             if (msgs_recvd == msgs_to_recv) break;
-
-        } 
-
-        printf("\nAristas totales : %d\n", num_edges);
-        printf("Grado promedio  : %.4f\n",
-               (double)(2 * num_edges) / N);
-        printf("\nGrado por nodo:\n");
-        for (int i = 0; i < N; i++) {
-            int deg = 0;
-            for (int j = 0; j < N; j++)
-                deg += edges_global[i * N + j];
-            printf("  nodo %3d → grado %d\n", i, deg);
         }
 
-        //Time
+        // ── Guardar resultados en archivo ──────────────────────────
+        char filename[128];
+        snprintf(filename, sizeof(filename), "results/%d_nodes_data.txt", N);
+        FILE *f = fopen(filename, "w");
+        if (f == NULL) {
+            fprintf(stderr, "Error al abrir %s\n", filename);
+        } else {
+
+            // 1. Points
+            fprintf(f, "points\n");
+            for (int i = 0; i < N; i++)
+                fprintf(f, "%d %.4f %.4f\n", i, points[i].phi, points[i].theta);
+
+            // 2. Edges (matriz de adyacencia)
+            fprintf(f, "\nedges\n");
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++)
+                    fprintf(f, "%d ", edges_global[i * N + j]);
+                fprintf(f, "\n");
+            }
+
+            // 3. Distances
+            fprintf(f, "\ndistances\n");
+            for (int i = 0; i < N; i++)
+                for (int j = i + 1; j < N; j++)
+                    fprintf(f, "%d %d %.6f\n", i, j, dist[i * N + j]);
+
+            // 4. Nodes degrees
+            fprintf(f, "\nnodes_degrees\n");
+            for (int i = 0; i < N; i++) {
+                int deg = 0;
+                for (int j = 0; j < N; j++)
+                    deg += edges_global[i * N + j];
+                fprintf(f, "%d %d\n", i, deg);
+            }
+
+            fclose(f);
+            printf("Resultados guardados en %s\n", filename);
+        }
+        // ──────────────────────────────────────────────────────────
+
+        // Benchmarks
         uswtime(&utime0, &stime0, &wtime0);
         printf("\nBenchmarks (sec):\n");
         printf("real %.6f\n", wtime0 - wtime2);
@@ -231,10 +241,8 @@ int main(int argn, char **argc) {
                100.0 * (utime0 - utime2 + stime0 - stime2)
                      / (wtime0 - wtime2));
 
-        //Free memory
         free(edges_global);
-
-    } 
+    }
 
     free(dist);
     free(points);
