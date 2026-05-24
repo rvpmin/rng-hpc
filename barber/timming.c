@@ -1,4 +1,4 @@
- #include "Timming.h"
+ #include "timming.h"
 
 void uswtime(double *usertime, double *systime, double *walltime)
 {

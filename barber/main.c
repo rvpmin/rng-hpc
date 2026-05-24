@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <mpi.h>
 #include "myvar.h"
-#include "Timming.h"
+#include "timming.h"
 
 //Points structure
 
