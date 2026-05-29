@@ -23,7 +23,7 @@ $$
 En esta implementación, los puntos se distribuyen sobre la superficie de una esfera unitaria y las distancias se calculan usando la distancia esférica:
 
 $$
-d(a, b) = \arccos\!\bigl(\sin\phi_a\sin\phi_b\cos(\theta_a-\theta_b) + \cos\phi_a\cos\phi_b\bigr)
+d(a, b) = \arccos\bigl(\sin\phi_a\sin\phi_b\cos(\theta_a-\theta_b) + \cos\phi_a\cos\phi_b\bigr)
 $$
 
 La complejidad de la verificación por fuerza bruta de todos los pares contra todos los testigos es $O(N^3)$, lo que hace indispensable la paralelización para valores grandes de $N$.
