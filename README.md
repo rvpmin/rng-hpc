@@ -104,7 +104,7 @@ El apagado se señaliza cuando el maestro envía `i = j = -2`.
 La siguiente gráfica muestra el tiempo de ejecución en función del número de procesos MPI utilizados, medido con 500 puntos sobre la esfera unitaria.
 
 <p align="center">
-  <img src="tiempos.png" alt="RNG edge construction" width="300">
+  <img src="tiempos.png" alt="RNG edge construction">
 </p>
 
 
