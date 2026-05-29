@@ -7,6 +7,7 @@ Implementación paralela del algoritmo de Grafo de Vecindad Relativa sobre punto
 ---
 ## Autor
 Roxana Pérez Medina
+
 roxanaperezmedina6@gmail.com
 
 ---
