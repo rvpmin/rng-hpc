@@ -93,7 +93,7 @@ Cada mensaje MPI transporta un struct de tamaño fijo (`MPI_myvar`) que contiene
 - `N` — número de puntos
 - `i`, `j` — índices del par (o valores centinela `-2` para señalizar apagado)
 - `is_edge` — bandera de resultado
-- `points[]` — arreglo con las coordenadas de todos los puntos (enviado en el primer contacto)
+- `points[]` — arreglo con las coordenadas de todos los puntos
 
 El apagado se señaliza cuando el maestro envía `i = j = -2`.
 
